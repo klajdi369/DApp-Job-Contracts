@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Jobs</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container" style="width: 650px;">
+      <div class="row">
+        <div class="col-lg-12 text-center" >
+          <h1 >Jobs</h1>
+          <hr/>
+          <br/>
+          <div id="content">
+			<h3 id="seekStatus">Seeking</h3>
+            <div id="jobs" style="display:none">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Job</th>
+							<th>Buyer</th>
+							<th>Price</th>
+							<th>Created</th>
+							<th>Expires</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+            <hr/>
+            <form role="form">
+              <div class="form-group" style="display:inline;">
+                <div class="input-group">
+                  <input class="form-control" placeholder="Job Name" name="jobName" required>
+                  <input class="form-control" placeholder="Developer Name" name="devName" required>
+                  <input class="form-control" placeholder="Buyer Name" name="buyerName" required>
+                  <input class="form-control" placeholder="Price in $" name="price" required>
+                  <input class="form-control" placeholder="Duration in days" name="duration" required>
+                  <span class="input-group-btn col-sm-10" style="padding:0;margin:0">
+                    <button type="submit" class="btn btn-primary btn-lg" style="">Add Job</button>
+                  </span>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+    <script>
+      // Initialize Web3
+      if (typeof web3 !== 'undefined') {
+      	web3 = new Web3(web3.currentProvider);
+      } else {
+      	web3 = new Web3(new Web3.providers.HttpProvider('https://rrwxt.sse.codesandbox.io'));
+      }
+
+      // Set Account
+      web3.eth.defaultAccount = web3.eth.accounts[0];
+
+      // Set Contract Abi
+      var contractAbi = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "developer",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "buyer",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "duration",
+				"type": "uint256"
+			}
+		],
+		"name": "addJob",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "jobCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "jobs",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "jobName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "devName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "buyerName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "created",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "expires",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+      // Contract ABI
+
+      // Contract Address
+      var contractAddress = '0xf952F0a10a4D18434c8d9cF37D16cc4208B8c2b8'; // Add Your Contract address here!!!
+      var sendAddress = '0xF78c1f9415330AADa34d5B68063303CA18C4Aad4';
+
+      // Set the Contract
+      var contract = new web3.eth.Contract(contractAbi, contractAddress);
+      console.log(contract);
+
+      let jobTable = $('#jobs');
+
+      updateJobs();
+
+      async function updateJobs() {
+      	try {
+      		let jobCount = await contract.methods.jobCount().call();
+      		console.log(jobCount);
+      		jobTable.children("tbody").empty();
+			
+			//let seeking = 1;
+      		for (let i = 0; i <= jobCount; i++) {
+      			await contract.methods.jobs(i).call(function(e, job) {
+      				//console.log(job["jobName"]);
+      				jobTable.children("table").append("<tr><td>" + job["jobName"] +
+      					"</td><td>" + job["buyerName"] +
+      					"</td><td>Cost: " + job["price"] + "$" +
+      					"</td><td>Created on " + getDate(job["created"]) +
+      					"</td><td>Expires on " + getDate(job["expires"]) +
+      					"</td></tr>");
+					i == jobCount ? jobTable.css("display", "") : '';
+					i == jobCount ? $("#seekStatus").css("display", "none") : $("#seekStatus").html(`Found ${i+1} items`);
+      			});
+      		}
+      	} catch (err) {
+      		//
+      	}
+      };
+
+      function getDate(timestamp) {
+      	var date = new Date(timestamp * 1000);
+      	var hours = date.getHours();
+      	var minutes = "0" + date.getMinutes();
+      	var seconds = "0" + date.getSeconds();
+      	var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      	var day = date.getDate();
+      	var month = months[date.getMonth()];
+      	var year = date.getFullYear();
+
+      	return `${hours}:${minutes.substr(-2)} ${day} ${month} ${year}`;
+      }
+
+
+      //contract.methods.jobs(0).call().then((val) => {console.log(val["devName"])})
+
+      //contract.methods.addJob("www.klajdi.net", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
+      //contract.methods.addJob("www.klajdi.ga", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
+      //contract.methods.addJob("www.clyde.ga", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
+
+
+      // Change the Job Name
+      $('form').on('submit', function(event) {
+      	event.preventDefault();
+      	contract.setJob($('input').val());
+      })
+    </script>
+  </body>
+</html>
