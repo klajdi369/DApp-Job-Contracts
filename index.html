@@ -62,7 +62,13 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+    <script src="js/abi.js"></script>
     <script>
+      // Contract Address
+      var contractAddress = '0xFa2750269C910B3eb63C7c68A90761e179421046'; // Add Your Contract address here!!!
+      var sendAddress = '0xcb2Dd2D273CB1Fc7e69DC63B1F01c3f80A770E77'; //Address used to modify contract state
+	  //let addressKey = '0x5b2b8559aa48faccaee53c3a66e335e4636941260390f90b14dd016401faade8';
+	  
       // Initialize Web3
       if (typeof web3 !== 'undefined') {
       	web3 = new Web3(web3.currentProvider);
@@ -74,108 +80,13 @@
       web3.eth.defaultAccount = web3.eth.accounts[0];
 
       // Set Contract Abi
-      var contractAbi = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "developer",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "buyer",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "duration",
-				"type": "uint256"
-			}
-		],
-		"name": "addJob",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "jobCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "jobs",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "jobName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "devName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "buyerName",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "created",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "expires",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]
+	  // REMOVED AND INCLUDED ABOVE
+	  
       // Contract ABI
 
-      // Contract Address
-      var contractAddress = '0xf952F0a10a4D18434c8d9cF37D16cc4208B8c2b8'; // Add Your Contract address here!!!
-      var sendAddress = '0xF78c1f9415330AADa34d5B68063303CA18C4Aad4';
+	
+	  //Unlocking account
+	  //web3.eth.personal.unlockAccount(sendAddress, "SomeKEY", 1).then((response) => {console.log(response);})
 
       // Set the Contract
       var contract = new web3.eth.Contract(contractAbi, contractAddress);
@@ -223,18 +134,63 @@
       	return `${hours}:${minutes.substr(-2)} ${day} ${month} ${year}`;
       }
 
+	  function addJob(name, dev, buyer, price, duration) {
+		let addressKey = prompt("Enter your private key in order to sign the transaction");
+		
+		if (!addressKey) {
+			alert("No private key entered");
+			return;
+		}
+		
+		if(!name || !dev || !buyer || !price || !duration) {
+			alert("Fill all fields with proper information");
+		}
+		
+		
+		let addJobABI = contract.methods.addJob(name, dev, buyer, parseInt(price), parseInt(duration)).encodeABI();
+		let tx = {
+			from: sendAddress,
+			to: contractAddress,
+			gas: 3000000,
+			data: addJobABI
+		}; 
+		
+		web3.eth.accounts.signTransaction(tx, addressKey).then(signed => {
+			var tran = web3.eth.sendSignedTransaction(signed.rawTransaction);
 
+			<!-- tran.on('confirmation', (confirmationNumber, receipt) => { -->
+			  <!-- console.log('confirmation: ' + confirmationNumber); -->
+			<!-- }); -->
+
+			<!-- tran.on('transactionHash', hash => { -->
+			  <!-- console.log('hash'); -->
+			  <!-- console.log(hash); -->
+			<!-- }); -->
+
+			tran.on('receipt', receipt => {
+			  alert("Receipt Available\nCheck console");
+			  console.log(receipt);
+			});
+
+			tran.on('error', console.error);
+		  });
+	  }
       //contract.methods.jobs(0).call().then((val) => {console.log(val["devName"])})
 
       //contract.methods.addJob("www.klajdi.net", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
-      //contract.methods.addJob("www.klajdi.ga", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
-      //contract.methods.addJob("www.clyde.ga", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}) //Add new job
 
+	  // NOTE to self -> The below line returns the receipt of the transaction once it is available, mostly used when mining is not instant (production???)
+	  //contract.methods.addJob("www.klajdi.ga", "RW", "clyde", 300, 3).send({from: sendAddress, gas:3000000}).on('confirmation', (confirmationNumber, receipt) => {console.log(receipt)});
 
       // Change the Job Name
       $('form').on('submit', function(event) {
       	event.preventDefault();
-      	contract.setJob($('input').val());
+		let jobName = $('input[name ="jobName"]').val();
+		let dev = $('input[name ="devName"]').val();
+		let buyer = $('input[name ="buyerName"]').val();
+		let price = $('input[name ="price"]').val();
+		let duration = $('input[name ="duration"]').val();
+      	addJob(jobName, dev, buyer, price, duration);
       })
     </script>
   </body>
