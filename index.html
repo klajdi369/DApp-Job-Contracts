@@ -48,6 +48,7 @@
                   <input class="form-control" placeholder="Buyer Name" name="buyerName" required>
                   <input class="form-control" placeholder="Price in $" name="price" required>
                   <input class="form-control" placeholder="Duration in days" name="duration" required>
+                  <input class="form-control" placeholder="Address to send the transaction from" name="fromAddress" required>
                   <span class="input-group-btn col-sm-10" style="padding:0;margin:0">
                     <button type="submit" class="btn btn-primary btn-lg" style="">Add Job</button>
                   </span>
@@ -65,8 +66,11 @@
     <script src="js/abi.js"></script>
     <script>
       // Contract Address
-      var contractAddress = '0xFa2750269C910B3eb63C7c68A90761e179421046'; // Add Your Contract address here!!!
-      var sendAddress = '0xcb2Dd2D273CB1Fc7e69DC63B1F01c3f80A770E77'; //Address used to modify contract state
+      var contractAddress = prompt("Enter contract address"); // Add Your Contract address here!!!
+      //var contractAddress = '0x922e96c31f69315Dec5aF37cB3eEcca483dd1356'; // Add Your Contract address here!!!
+      //var sendAddress = '0xa445D544e748536cE8d5B959e2B9cB152b08a384'; //Address used to modify contract state
+	  
+	  
 	  //let addressKey = '0x5b2b8559aa48faccaee53c3a66e335e4636941260390f90b14dd016401faade8';
 	  
       // Initialize Web3
@@ -100,13 +104,13 @@
       	try {
       		let jobCount = await contract.methods.jobCount().call();
       		console.log(jobCount);
-      		jobTable.children("tbody").empty();
+      		$(".titem").remove();
 			
 			//let seeking = 1;
       		for (let i = 0; i <= jobCount; i++) {
       			await contract.methods.jobs(i).call(function(e, job) {
       				//console.log(job["jobName"]);
-      				jobTable.children("table").append("<tr><td>" + job["jobName"] +
+      				jobTable.children("table").append("<tr class='titem'><td>" + job["jobName"] +
       					"</td><td>" + job["buyerName"] +
       					"</td><td>Cost: " + job["price"] + "$" +
       					"</td><td>Created on " + getDate(job["created"]) +
@@ -134,7 +138,7 @@
       	return `${hours}:${minutes.substr(-2)} ${day} ${month} ${year}`;
       }
 
-	  function addJob(name, dev, buyer, price, duration) {
+	  function addJob(name, dev, buyer, price, duration, sendAddress) {
 		let addressKey = prompt("Enter your private key in order to sign the transaction");
 		
 		if (!addressKey) {
@@ -170,6 +174,7 @@
 			tran.on('receipt', receipt => {
 			  alert("Receipt Available\nCheck console");
 			  console.log(receipt);
+			  updateJobs();
 			});
 
 			tran.on('error', console.error);
@@ -190,6 +195,7 @@
 		let buyer = $('input[name ="buyerName"]').val();
 		let price = $('input[name ="price"]').val();
 		let duration = $('input[name ="duration"]').val();
+		let fromAddress = $('input[name ="fromAddress"]').val();
       	addJob(jobName, dev, buyer, price, duration);
       })
     </script>
